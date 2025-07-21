@@ -31,6 +31,9 @@ import chaptersData from "./data/chapters";
 import qaData from "./data/qaData";
 import theme from "./theme/theme";
 
+// ✅ Added ExampleComponent
+import ExampleComponent from "./ExampleComponent";
+
 // *** ADDED FOR ADMIN LOGIN ***
 const ADMIN_CREDENTIALS = { username: "admin", password: "12345" }; // change!
 
@@ -96,13 +99,12 @@ export default function App() {
   const [chapterList, setChapterList] = useState(chaptersData);
 
   // uploaded (data URL) videos
-  // shape: {id,title,src,isUploaded:true,type?,size?}
   const [uploadedVideos, setUploadedVideos] = useState([]);
 
   const [uploadError, setUploadError] = useState("");
 
   // undo
-  const [removedItem, setRemovedItem] = useState(null); // {type:"chapter"|"upload", chapter?|video?}
+  const [removedItem, setRemovedItem] = useState(null);
   const [showUndo, setShowUndo] = useState(false);
 
   // *** ADDED FOR ADMIN LOGIN ***
@@ -146,7 +148,6 @@ export default function App() {
   // ----- handlers -----
   const handleTabChange = (_e, newValue) => setTab(newValue);
 
-  // merge built‑in + uploaded for display + search
   const allVideos = useMemo(
     () => [...chapterList, ...uploadedVideos],
     [chapterList, uploadedVideos]
@@ -164,7 +165,6 @@ export default function App() {
     setNewQuestion("");
   };
 
-  // upload -> data URL -> add to uploads
   const handleVideoUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -189,22 +189,17 @@ export default function App() {
           type: file.type,
           size: file.size,
         });
-      } catch {
-        // ignore failed file
-      }
+      } catch {}
     }
 
     if (vids.length) setUploadedVideos((prev) => [...prev, ...vids]);
 
-    // allow re-select
     e.target.value = "";
   };
 
-  // unified remove (called from Chapter)
   const handleRemoveVideo = (id) => {
     let removed = null;
 
-    // try uploaded list
     setUploadedVideos((prev) => {
       const vid = prev.find((v) => v.id === id);
       if (!vid) return prev;
@@ -212,7 +207,6 @@ export default function App() {
       return prev.filter((v) => v.id !== id);
     });
 
-    // try chapter list (if not found in uploads)
     setChapterList((prev) => {
       if (removed) return prev;
       const chap = prev.find((c) => c.id === id);
@@ -244,7 +238,6 @@ export default function App() {
     setRemovedItem(null);
   };
 
-  // *** ADDED FOR ADMIN LOGIN ***
   const handleLogin = (e) => {
     e.preventDefault();
     if (
@@ -259,13 +252,11 @@ export default function App() {
     }
   };
 
-  // *** ADDED FOR ADMIN LOGIN ***
   const handleLogout = () => {
     setIsAdmin(false);
     localStorage.removeItem("isAdmin");
   };
 
-  // *** ADDED FOR FORGOT PASSWORD ***
   const openForgotDialog = () => {
     setForgotOpen(true);
     setForgotEmail("");
@@ -276,27 +267,20 @@ export default function App() {
     setForgotError("");
   };
   const handleForgotSend = () => {
-    // simple email check
     const email = forgotEmail.trim();
     const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!email || !ok) {
       setForgotError("Enter a valid email.");
       return;
     }
-    // demo: show alert; real app would call backend
     alert(`Password reset link would be sent to ${email} (demo).`);
     closeForgotDialog();
   };
 
-  // ----- render -----
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
-      {/* =========================================================
-          LOGIN GATE
-          If not admin, show premium-style login screen only.
-          ========================================================= */}
       {!isAdmin ? (
         <Container
           maxWidth="sm"
@@ -355,7 +339,6 @@ export default function App() {
             </Button>
           </form>
 
-          {/* *** ADDED FOR FORGOT PASSWORD link *** */}
           <Typography
             variant="body2"
             sx={{
@@ -369,7 +352,6 @@ export default function App() {
             Forgot Password?
           </Typography>
 
-          {/* Forgot Password Dialog */}
           <Dialog open={forgotOpen} onClose={closeForgotDialog}>
             <DialogTitle>Reset Password</DialogTitle>
             <DialogContent sx={{ pt: 1 }}>
@@ -397,7 +379,6 @@ export default function App() {
         </Container>
       ) : (
         <>
-          {/* =================== MAIN SECURED APP =================== */}
           <AppBar
             position="static"
             elevation={2}
@@ -405,7 +386,6 @@ export default function App() {
           >
             <Toolbar sx={{ justifyContent: "space-between", gap: 2 }}>
               {renderBrandTitle()}
-              {/* *** ADDED FOR ADMIN LOGIN *** Logout Button */}
               <Button
                 onClick={handleLogout}
                 variant="outlined"
@@ -502,6 +482,14 @@ export default function App() {
                   onRemoveVideo={handleRemoveVideo}
                 />
 
+                {/* ExampleComponent added here */}
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="h5" sx={{ mb: 2 }}>
+                    API Test
+                  </Typography>
+                  <ExampleComponent />
+                </Box>
+
                 {/* Q&A */}
                 <Box sx={{ mt: 6 }}>
                   <Typography variant="h5" gutterBottom>
@@ -536,7 +524,7 @@ export default function App() {
               </Box>
             )}
 
-            {/* -------------------- OTHER TABS (same content as before) -------------------- */}
+            {/* -------------------- FORMULAS TAB -------------------- */}
             {tab === TAB_INDEX.FORMULAS && (
               <Box>
                 <Typography variant="h5" gutterBottom>
@@ -565,6 +553,7 @@ export default function App() {
               </Box>
             )}
 
+            {/* -------------------- ABOUT TAB -------------------- */}
             {tab === TAB_INDEX.ABOUT && (
               <Box>
                 <Typography variant="h5" gutterBottom>
@@ -578,203 +567,160 @@ export default function App() {
               </Box>
             )}
 
+            {/* -------------------- HISTORY TAB -------------------- */}
             {tab === TAB_INDEX.HISTORY && (
               <Box>
                 <Typography variant="h5" gutterBottom>
                   Our Journey
                 </Typography>
                 <Typography>
-                  Started in 2025, Lemon Studies aims to simplify learning for
-                  Class 10 students through curated content and technology-driven
-                  education.
+                  Started in 2025, Lemon Studies aims to make science
+                  interesting and accessible to all students.
                 </Typography>
               </Box>
             )}
 
+            {/* -------------------- CONTACT TAB -------------------- */}
             {tab === TAB_INDEX.CONTACT && (
               <Box>
                 <Typography variant="h5" gutterBottom>
                   Contact Us
                 </Typography>
-                <Typography>Email: support@lemonstudies.com</Typography>
-                <Typography>Phone: +91-9876543210</Typography>
+                <TextField
+                  fullWidth
+                  label="Name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="Email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="Message"
+                  value={formData.message}
+                  onChange={(e) =>
+                    setFormData({ ...formData, message: e.target.value })
+                  }
+                  sx={{ mb: 2 }}
+                />
+                <Button variant="contained">Submit</Button>
               </Box>
             )}
 
+            {/* -------------------- ASK TAB -------------------- */}
             {tab === TAB_INDEX.ASK && (
               <Box>
                 <Typography variant="h5" gutterBottom>
-                  Ask a Question
+                  Ask Any Question
                 </Typography>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    alert("✅ Your question has been submitted!");
-                    setFormData({ name: "", email: "", message: "" });
-                  }}
-                >
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Your Name"
-                        fullWidth
-                        required
-                        value={formData.name}
-                        onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Your Email"
-                        fullWidth
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Your Question"
-                        fullWidth
-                        required
-                        multiline
-                        rows={4}
-                        value={formData.message}
-                        onChange={(e) =>
-                          setFormData({ ...formData, message: e.target.value })
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Button type="submit" variant="contained" fullWidth>
-                        Submit
-                      </Button>
-                    </Grid>
-                  </Grid>
-                </form>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Submit your queries and we will respond soon.
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Your Question"
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+                <Button variant="contained" onClick={handleQuestionSubmit}>
+                  Submit
+                </Button>
               </Box>
             )}
 
+            {/* -------------------- APPLY TAB -------------------- */}
             {tab === TAB_INDEX.APPLY && (
               <Box>
                 <Typography variant="h5" gutterBottom>
-                  Apply as a Tutor
+                  Apply as Tutor
                 </Typography>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    alert("✅ Tutor application submitted!");
-                    setTutorData({
-                      name: "",
-                      email: "",
-                      subject: "",
-                      experience: "",
-                      message: "",
-                    });
-                  }}
-                >
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Full Name"
-                        fullWidth
-                        required
-                        value={tutorData.name}
-                        onChange={(e) =>
-                          setTutorData({ ...tutorData, name: e.target.value })
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Email"
-                        fullWidth
-                        type="email"
-                        required
-                        value={tutorData.email}
-                        onChange={(e) =>
-                          setTutorData({ ...tutorData, email: e.target.value })
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Subject(s)"
-                        fullWidth
-                        required
-                        value={tutorData.subject}
-                        onChange={(e) =>
-                          setTutorData({ ...tutorData, subject: e.target.value })
-                        }
-                        placeholder="Chemistry, Physics..."
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Experience (years)"
-                        fullWidth
-                        required
-                        value={tutorData.experience}
-                        onChange={(e) =>
-                          setTutorData({ ...tutorData, experience: e.target.value })
-                        }
-                        placeholder="e.g., 3"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Message / Teaching Approach"
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={tutorData.message}
-                        onChange={(e) =>
-                          setTutorData({ ...tutorData, message: e.target.value })
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Button variant="contained" type="submit" fullWidth>
-                        Submit Application
-                      </Button>
-                    </Grid>
-                  </Grid>
-                </form>
+                <TextField
+                  fullWidth
+                  label="Name"
+                  value={tutorData.name}
+                  onChange={(e) =>
+                    setTutorData({ ...tutorData, name: e.target.value })
+                  }
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="Email"
+                  value={tutorData.email}
+                  onChange={(e) =>
+                    setTutorData({ ...tutorData, email: e.target.value })
+                  }
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="Subject"
+                  value={tutorData.subject}
+                  onChange={(e) =>
+                    setTutorData({ ...tutorData, subject: e.target.value })
+                  }
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="Experience"
+                  value={tutorData.experience}
+                  onChange={(e) =>
+                    setTutorData({ ...tutorData, experience: e.target.value })
+                  }
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Message"
+                  value={tutorData.message}
+                  onChange={(e) =>
+                    setTutorData({ ...tutorData, message: e.target.value })
+                  }
+                  sx={{ mb: 2 }}
+                />
+                <Button variant="contained">Submit</Button>
               </Box>
             )}
           </Container>
-
-          {/* Snackbar: Undo */}
-          <Snackbar
-            open={showUndo}
-            autoHideDuration={6000}
-            onClose={handleUndoClose}
-            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-          >
-            <Alert
-              severity="info"
-              onClose={handleUndoClose}
-              action={
-                <Button
-                  color="inherit"
-                  size="small"
-                  startIcon={<UndoIcon fontSize="small" />}
-                  onClick={handleUndoRemove}
-                >
-                  Undo
-                </Button>
-              }
-            >
-              Item removed.
-            </Alert>
-          </Snackbar>
         </>
       )}
+
+      {/* Undo Snackbar */}
+      <Snackbar
+        open={showUndo}
+        autoHideDuration={5000}
+        onClose={handleUndoClose}
+        message="Video removed"
+        action={
+          <Button
+            color="secondary"
+            size="small"
+            startIcon={<UndoIcon />}
+            onClick={handleUndoRemove}
+          >
+            UNDO
+          </Button>
+        }
+      />
     </ThemeProvider>
   );
 }
